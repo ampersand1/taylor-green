@@ -1,10 +1,10 @@
 #include "copyright.h"
 /*============================================================================*/
-/*! \file orszag-tang.c
- *  \brief Problem generator for Orszag-Tang vortex problem.
+/*! \file taylor-green.c
+ *  \brief Problem generator for taylor-green vortex problem.
  *
- * REFERENCE: For example, see: G. Toth,  "The div(B)=0 constraint in shock
- *   capturing MHD codes", JCP, 161, 605 (2000)				      */
+ * REFERENCE: Paradigmatic flow for small-scale magnetohydrodynamics
+ * E. Lee et. al				      */
 /*============================================================================*/
 
 #include <math.h>
@@ -25,64 +25,96 @@
 void problem(DomainS *pDomain)
 {
   GridS *pGrid = pDomain->Grid;
-  int i,is,ie,j,js,je,ks,nx1,nx2;
-  Real d0,p0,B0,v0,x1,x2,x3,**az;
+  int is,ie,js,je,ks,ke,i,j,k,nx1,nx2,nx3;
+  Real b0,v0,d0, **ax, **ay, **az;
+  
+  /*  is js ks seems like start for the 3 directions i,j,k   */
+  is = pGrid->is;
+  ie = pGrid->ie;
 
-  is = pGrid->is; ie = pGrid->ie;
-  js = pGrid->js; je = pGrid->je;
+  js = pGrid->js;
+  je = pGrid->je;
+
   ks = pGrid->ks;
+  ke = pGrid->ke;
+
+  /*Not exactly sure what this is for but it was in the orszag-tang.c file*/
   nx1 = (ie-is)+1 + 2*nghost;
   nx2 = (je-js)+1 + 2*nghost;
-  if (pGrid->Nx[2] > 1) {
-    ath_error("[orszag-tang]: This problem can only be run in 2D\n");
-  }
-  if (pGrid->Nx[1] == 1) {
-    ath_error("[orszag-tang]: This problem can only be run in 2D\n");
-  }
-  if ((az = (Real**)calloc_2d_array(nx2, nx1, sizeof(Real))) == NULL) {
-    ath_error("[orszag-tang]: Error allocating memory for vector pot\n");
-  }
-  B0 = 1.0/sqrt(4.0*PI);
-  d0 = 25.0/(36.0*PI);
+  nx3 = (ke-ks)+1 + 2*nghost;
+
+  /* Temporarily set B0 and v0 */
+  b0 = 1.0;
   v0 = 1.0;
-  p0 = 5.0/(12*PI);
+  d0 = 1.0;
 
-/* Initialize vector potential */
+  /******************************************************/
+  /* Initialize vector potential */
 
+for(k=ks; k<=ke+1; k++) {
   for (j=js; j<=je+1; j++) {
     for (i=is; i<=ie+1; i++) {
-      cc_pos(pGrid,i,j,ks,&x1,&x2,&x3);
+      cc_pos(pGrid,i,j,k,&x1,&x2,&x3);
       x1 -= 0.5*pGrid->dx1;
       x2 -= 0.5*pGrid->dx2;
-      az[j][i] = B0/(4.0*PI)*cos(4.0*PI*x1) + B0/(2.0*PI)*cos(2.0*PI*x2);
+      x3 -= 0.5*pGrid->dx3;
+ 
+      /*Magnetic potential currently set to insulating*/
+      ax[k][j] = -b0*sin(x1)*cos(x2)*cos(x3) ; 
+      ay[k][i] =  b0*cos(x1)*sin(x2)*cos(x3) ;
+      az[j][i] =  0 
+
     }
   }
+}
 
-/* Initialize density, momentum, face-centered fields */
-
+  /******************************************************/
+  /* Initialize density, momentum, face-centered fields */
+for  (k=ks; k<=ke; j++) {
   for (j=js; j<=je; j++) {
     for (i=is; i<=ie; i++) {
 /* Calculate the cell center positions */
-      cc_pos(pGrid,i,j,ks,&x1,&x2,&x3);
+      cc_pos(pGrid,i,j,k,&x1,&x2,&x3);
 
-      pGrid->U[ks][j][i].d = d0;
-      pGrid->U[ks][j][i].M1 = -d0*v0*sin(2.0*PI*x2);
-      pGrid->U[ks][j][i].M2 =  d0*v0*sin(2.0*PI*x1);
-      pGrid->U[ks][j][i].M3 = 0.0;
-      pGrid->B1i[ks][j][i] = (az[j+1][i] - az[j][i])/pGrid->dx2;
-      pGrid->B2i[ks][j][i] =-(az[j][i+1] - az[j][i])/pGrid->dx1;
+      pGrid->U[k][j][i].d = d0;
+      pGrid->U[k][j][i].M1 = d0*v0*sin(x1)*cos(x2)*cos(x3);
+      pGrid->U[k][j][i].M2 = -d0*v0*cos(x1)sin(x2)*cos(x3);
+      pGrid->U[k][j][i].M3 = 0.0;
+
+      /*Curl of A*/
+      pGrid->B1i[k][j][i] = (az[j+1][i] - az[j][i])/pGrid->dx2 - (ay[k+1][i] - ay[k][i])/pGrid->dx3;
+      pGrid->B2i[k][j][i] = (ax[k+1][j] - ax[k][j])/pGrid->dx3 - (az[j][i+1] - az[j][i])/pGrid->dx1;
+      pGrid->B3i[k][j][i] = (ay[k][i+1] - ay[k][i])/pGrid->dx1 - (ax[k][j+1] - ax[k][j])/pGrid->dx2;
     }
   }
+}
+
+/******************************************************/
+/* NOTE TO SELF!!!!
+Look through paper for what boundary condition for B is supposed to be.  
+Also intialize the total energy and cell-centered B
+Consider using Orszag-tang.c values of b0, v0. 
+
+Also what is p0?  
+What should the total energy be?
+*/
+  /******************************************************/
+
 /* boundary conditions on interface B */
-  for (j=js; j<=je; j++) {
+for  (k=ks; k<=ke; j++) {  
+ for (j=js; j<=je; j++) {
   for (i=is; i<=ie+1; i++) {
     pGrid->B1i[ks][j][i] = (az[j+1][i] - az[j][i])/pGrid->dx2;
-  }}
+  }
+ }
   for (j=js; j<=je+1; j++) {
   for (i=is; i<=ie; i++) {
     pGrid->B2i[ks][j][i] =-(az[j][i+1] - az[j][i])/pGrid->dx1;
-  }}
+  }
+ }
+}
 
+  /******************************************************/
 /* initialize total energy and cell-centered B */
 
   for (j=js; j<=je; j++) {
@@ -98,6 +130,9 @@ void problem(DomainS *pDomain)
               + SQR(pGrid->U[ks][j][i].M3))/pGrid->U[ks][j][i].d;
 #endif
   }}
+
+
+
 
   return;
 }
