@@ -25,8 +25,8 @@
 void problem(DomainS *pDomain)
 {
   GridS *pGrid = pDomain->Grid;
-  int is,ie,js,je,ks,ke,i,j,k,nx1,nx2,nx3;
-  Real b0,v0,d0, **ax, **ay, **az;
+  int i,j,k,is,ie,js,je,ks,ke,nx1,nx2,nx3;
+  Real p0, b0,v0,d0, **ax, **ay, **az, x1,x2,x3;
   
   /*  is js ks seems like start for the 3 directions i,j,k   */
   is = pGrid->is;
@@ -42,11 +42,28 @@ void problem(DomainS *pDomain)
   nx1 = (ie-is)+1 + 2*nghost;
   nx2 = (je-js)+1 + 2*nghost;
   nx3 = (ke-ks)+1 + 2*nghost;
-
+    
+    
+    //why is it that when I put this in the "illegal instruction 4" error went away? WHY!?!?!?!
+    if ((ax = (Real**)calloc_2d_array(nx3, nx1, sizeof(Real))) == NULL) {
+        ath_error("[taylor-green]: Error allocating memory for vector pot\n");
+    }
+    
+    if ((ay = (Real**)calloc_2d_array(nx3, nx1, sizeof(Real))) == NULL) {
+        ath_error("[taylor-green]: Error allocating memory for vector pot\n");
+    }
+    
+    if ((az = (Real**)calloc_2d_array(nx2, nx1, sizeof(Real))) == NULL) {
+        ath_error("[taylor-green]: Error allocating memory for vector pot\n");
+    }
+    
+    
   /* Temporarily set B0 and v0 */
-  b0 = 1.0;
-  v0 = 1.0;
-  d0 = 1.0;
+  b0 = 1.0/sqrt(4.0*PI);
+  v0 = 1.0;       //must be smaller than mach speed.
+  d0 = 25.0/(36.0*PI);
+  p0 = 5.0/(12*PI);
+ /*internal energy density -> pressure in this case */
 
   /******************************************************/
   /* Initialize vector potential */
@@ -62,7 +79,7 @@ for(k=ks; k<=ke+1; k++) {
       /*Magnetic potential currently set to insulating*/
       ax[k][j] = -b0*sin(x1)*cos(x2)*cos(x3) ; 
       ay[k][i] =  b0*cos(x1)*sin(x2)*cos(x3) ;
-      az[j][i] =  0 
+      az[j][i] =  0 ; 
 
     }
   }
@@ -70,7 +87,7 @@ for(k=ks; k<=ke+1; k++) {
 
   /******************************************************/
   /* Initialize density, momentum, face-centered fields */
-for  (k=ks; k<=ke; j++) {
+for  (k=ks; k<=ke; k++) {
   for (j=js; j<=je; j++) {
     for (i=is; i<=ie; i++) {
 /* Calculate the cell center positions */
@@ -78,7 +95,7 @@ for  (k=ks; k<=ke; j++) {
 
       pGrid->U[k][j][i].d = d0;
       pGrid->U[k][j][i].M1 = d0*v0*sin(x1)*cos(x2)*cos(x3);
-      pGrid->U[k][j][i].M2 = -d0*v0*cos(x1)sin(x2)*cos(x3);
+      pGrid->U[k][j][i].M2 = -d0*v0*cos(x1)*sin(x2)*cos(x3);
       pGrid->U[k][j][i].M3 = 0.0;
 
       /*Curl of A*/
@@ -90,46 +107,51 @@ for  (k=ks; k<=ke; j++) {
 }
 
 /******************************************************/
-/* NOTE TO SELF!!!!
-Look through paper for what boundary condition for B is supposed to be.  
-Also intialize the total energy and cell-centered B
-Consider using Orszag-tang.c values of b0, v0. 
-
-Also what is p0?  
-What should the total energy be?
-*/
-  /******************************************************/
+/******************************************************/
 
 /* boundary conditions on interface B */
-for  (k=ks; k<=ke; j++) {  
+for  (k=ks; k<=ke; k++) {  
  for (j=js; j<=je; j++) {
   for (i=is; i<=ie+1; i++) {
-    pGrid->B1i[ks][j][i] = (az[j+1][i] - az[j][i])/pGrid->dx2;
+    pGrid->B1i[k][j][i] = (az[j+1][i] - az[j][i])/pGrid->dx2 - (ay[k+1][i] - ay[k][i])/pGrid->dx3;
   }
  }
-  for (j=js; j<=je+1; j++) {
-  for (i=is; i<=ie; i++) {
-    pGrid->B2i[ks][j][i] =-(az[j][i+1] - az[j][i])/pGrid->dx1;
+}
+ 
+for (k=ks; k<=ke; k++){
+ for (j=js; j<=je+1; j++) {
+  for (i=is; i<=ie; i++)   {
+    pGrid->B2i[k][j][i] = (ax[k+1][j] - ax[k][j])/pGrid->dx3 - (az[j][i+1] - az[j][i])/pGrid->dx1; 
+  } 
+ }
+}
+for (k=ks; k<=ke+1; k++){
+  for (j=js; j<=je; j++) {
+  for (i=is; i<=ie; i++)  {
+    pGrid->B3i[k][j][i] = (ay[k][i+1] - ay[k][i])/pGrid->dx1 - (ax[k][j+1] - ax[k][j])/pGrid->dx2;
   }
  }
 }
 
   /******************************************************/
 /* initialize total energy and cell-centered B */
-
+  for (k=ks; k<=ke; k++) {
   for (j=js; j<=je; j++) {
   for (i=is; i<=ie; i++) {
-    pGrid->U[ks][j][i].B1c = 0.5*(pGrid->B1i[ks][j][i]+pGrid->B1i[ks][j][i+1]);
-    pGrid->U[ks][j][i].B2c = 0.5*(pGrid->B2i[ks][j][i]+pGrid->B2i[ks][j+1][i]);
-    pGrid->U[ks][j][i].B3c = 0.0;
-#ifndef ISOTHERMAL
-    pGrid->U[ks][j][i].E = p0/Gamma_1
-        + 0.5*(SQR(pGrid->U[ks][j][i].B1c) + SQR(pGrid->U[ks][j][i].B2c)
-             + SQR(pGrid->U[ks][j][i].B3c))
-        + 0.5*(SQR(pGrid->U[ks][j][i].M1) + SQR(pGrid->U[ks][j][i].M2)
-              + SQR(pGrid->U[ks][j][i].M3))/pGrid->U[ks][j][i].d;
+    pGrid->U[k][j][i].B1c = 0.5*(pGrid->B1i[k][j][i]+pGrid->B1i[k][j][i+1]);
+    pGrid->U[k][j][i].B2c = 0.5*(pGrid->B2i[k][j][i]+pGrid->B2i[k][j+1][i]);
+    pGrid->U[k][j][i].B3c = 0.5*(pGrid->B3i[k][j][i]+pGrid->B3i[k+1][j][i]);
+
+#ifndef ISOTHERMAL   /*? Thing I am least sure about below*/
+    pGrid->U[k][j][i].E = p0/Gamma_1
+        + 0.5*(SQR(pGrid->U[k][j][i].B1c) + SQR(pGrid->U[k][j][i].B2c)
+             + SQR(pGrid->U[k][j][i].B3c))
+        + 0.5*(SQR(pGrid->U[k][j][i].M1) + SQR(pGrid->U[k][j][i].M2)
+              + SQR(pGrid->U[k][j][i].M3))/pGrid->U[k][j][i].d;
 #endif
-  }}
+  }
+ }
+}
 
 
 
