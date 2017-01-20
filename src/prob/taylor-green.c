@@ -26,7 +26,7 @@ void problem(DomainS *pDomain)
 {
   GridS *pGrid = pDomain->Grid;
   int i,j,k,is,ie,js,je,ks,ke,nx1,nx2,nx3;
-  Real p0, b0,v0,d0, **ax, **ay, **az, x1,x2,x3;
+  Real p0, b0,v0,d0, ***ax, ***ay, ***az, x1,x2,x3;
   
   /*  is js ks seems like start for the 3 directions i,j,k   */
   is = pGrid->is;
@@ -45,17 +45,23 @@ void problem(DomainS *pDomain)
     
     
     //why is it that when I put this in the "illegal instruction 4" error went away? WHY!?!?!?!
-    if ((ax = (Real**)calloc_2d_array(nx3, nx1, sizeof(Real))) == NULL) {
+    //also gotta add in N(x)>1 or something for 3d ness.   
+  if ((ax = (Real***)calloc_3d_array(nx3,nx2, nx1, sizeof(Real))) == NULL) {
         ath_error("[taylor-green]: Error allocating memory for vector pot\n");
     }
     
-    if ((ay = (Real**)calloc_2d_array(nx3, nx1, sizeof(Real))) == NULL) {
+    if ((ay = (Real***)calloc_3d_array(nx3, nx2, nx1, sizeof(Real))) == NULL) {
         ath_error("[taylor-green]: Error allocating memory for vector pot\n");
     }
     
-    if ((az = (Real**)calloc_2d_array(nx2, nx1, sizeof(Real))) == NULL) {
+    if ((az = (Real***)calloc_3d_array(nx3, nx2, nx1, sizeof(Real))) == NULL) {
         ath_error("[taylor-green]: Error allocating memory for vector pot\n");
     }
+
+
+    if (pGrid->Nx[2] == 1) {
+       ath_error("[taylor-green]: This problem can only be run in 3D\n");
+     }
     
     
   /* Temporarily set B0 and v0 */
@@ -77,9 +83,9 @@ for(k=ks; k<=ke+1; k++) {
       x3 -= 0.5*pGrid->dx3;
  
       /*Magnetic potential currently set to insulating*/
-      ax[k][j] = -b0*sin(x1)*cos(x2)*cos(x3) ; 
-      ay[k][i] =  b0*cos(x1)*sin(x2)*cos(x3) ;
-      az[j][i] =  0 ; 
+      ax[k][j][i] = -b0*sin(x1)*cos(x2)*cos(x3) ; 
+      ay[k][j][i] =  b0*cos(x1)*sin(x2)*cos(x3) ;
+      az[k][j][i] =  0 ; 
 
     }
   }
@@ -99,9 +105,9 @@ for  (k=ks; k<=ke; k++) {
       pGrid->U[k][j][i].M3 = 0.0;
 
       /*Curl of A*/
-      pGrid->B1i[k][j][i] = (az[j+1][i] - az[j][i])/pGrid->dx2 - (ay[k+1][i] - ay[k][i])/pGrid->dx3;
-      pGrid->B2i[k][j][i] = (ax[k+1][j] - ax[k][j])/pGrid->dx3 - (az[j][i+1] - az[j][i])/pGrid->dx1;
-      pGrid->B3i[k][j][i] = (ay[k][i+1] - ay[k][i])/pGrid->dx1 - (ax[k][j+1] - ax[k][j])/pGrid->dx2;
+      pGrid->B1i[k][j][i] = (az[k][j+1][i] - az[k][j][i])/pGrid->dx2 - (ay[k+1][j][i] - ay[k][j][i])/pGrid->dx3;
+      pGrid->B2i[k][j][i] = (ax[k+1][j][i] - ax[k][j][i])/pGrid->dx3 - (az[k][j][i+1] - az[k][j][i])/pGrid->dx1;
+      pGrid->B3i[k][j][i] = (ay[k][j][i+1] - ay[k][j][i])/pGrid->dx1 - (ax[k][j+1][i] - ax[k][j][i])/pGrid->dx2;
     }
   }
 }
@@ -113,7 +119,7 @@ for  (k=ks; k<=ke; k++) {
 for  (k=ks; k<=ke; k++) {  
  for (j=js; j<=je; j++) {
   for (i=is; i<=ie+1; i++) {
-    pGrid->B1i[k][j][i] = (az[j+1][i] - az[j][i])/pGrid->dx2 - (ay[k+1][i] - ay[k][i])/pGrid->dx3;
+    pGrid->B1i[k][j][i] = (az[k][j+1][i] - az[k][j][i])/pGrid->dx2 - (ay[k+1][j][i] - ay[k][j][i])/pGrid->dx3;
   }
  }
 }
@@ -121,14 +127,14 @@ for  (k=ks; k<=ke; k++) {
 for (k=ks; k<=ke; k++){
  for (j=js; j<=je+1; j++) {
   for (i=is; i<=ie; i++)   {
-    pGrid->B2i[k][j][i] = (ax[k+1][j] - ax[k][j])/pGrid->dx3 - (az[j][i+1] - az[j][i])/pGrid->dx1; 
+    pGrid->B2i[k][j][i] = (ax[k+1][j][i] - ax[k][j][i])/pGrid->dx3 - (az[k][j][i+1] - az[k][j][i])/pGrid->dx1; 
   } 
  }
 }
 for (k=ks; k<=ke+1; k++){
   for (j=js; j<=je; j++) {
   for (i=is; i<=ie; i++)  {
-    pGrid->B3i[k][j][i] = (ay[k][i+1] - ay[k][i])/pGrid->dx1 - (ax[k][j+1] - ax[k][j])/pGrid->dx2;
+    pGrid->B3i[k][j][i] = (ay[k][j][i+1] - ay[k][j][i])/pGrid->dx1 - (ax[k][j+1][i] - ax[k][j][i])/pGrid->dx2;
   }
  }
 }
