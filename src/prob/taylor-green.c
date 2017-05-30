@@ -16,6 +16,7 @@
 #include "prototypes.h"
 #include <string.h>
 
+
 #ifndef MHD
 #error : The problem generator orszag_tang.c only works for mhd.
 #endif /* MHD */
@@ -27,7 +28,7 @@ void problem(DomainS *pDomain)
 {
   GridS *pGrid = pDomain->Grid;
   int i,j,k,is,ie,js,je,ks,ke,nx1,nx2,nx3;
-  Real p0, b0,v0,d0, ***ax, ***ay, ***az, x1,x2,x3;
+  Real L, p, p0, b0,v0,d0, ***ax, ***ay, ***az, x1,x2,x3,gamma;
 
   /*  is js ks seems like start for the 3 directions i,j,k   */
   is = pGrid->is;
@@ -46,7 +47,7 @@ void problem(DomainS *pDomain)
 
 
     //When I put this in the "illegal instruction 4" error went away.
-  if ((ax = (Real***)calloc_3d_array(nx3,nx2, nx1, sizeof(Real))) == NULL) {
+    if ((ax = (Real***)calloc_3d_array(nx3,nx2, nx1, sizeof(Real))) == NULL) {
         ath_error("[taylor-green]: Error allocating memory for vector pot\n");
     }
 
@@ -58,7 +59,6 @@ void problem(DomainS *pDomain)
         ath_error("[taylor-green]: Error allocating memory for vector pot\n");
     }
 
-
     if (pGrid->Nx[2] == 1) {
        ath_error("[taylor-green]: This problem can only be run in 3D\n");
      }
@@ -66,12 +66,17 @@ void problem(DomainS *pDomain)
 
   /* Temporarily set B0 and v0 */
   b0 = 1.0;
-  v0 = 0.00001;       // 1.0;       //must be smaller than mach speed.
-  d0 =1000.0;
+  v0 = 0.0001;       // 1.0;    //must be smaller than mach speed.
+  d0 =1000.0;         // d0 ?
   p0 = 1.0;
+  gamma = 1.666666667;
+  L=1.0;
  /*internal energy density -> pressure in this case */
+/*********Functional Form of Pressure*************************/
+//p= p0+(d0*(v0*v0)/16.0)*(cos(2*x1/L)+cos(2*x2/L))*(cos(2*x3/L)+2);
+//p = (1.0/gamma - ((v0*v0)/16.0)*(cos(2*x1/L)+cos(2*x2/L))*(cos(2*x3/L)+2)) ;
+/******************************************************/
 
-  /******************************************************/
   /* Initialize vector potential */
 
 for(k=ks; k<=ke+1; k++) {
@@ -90,7 +95,6 @@ for(k=ks; k<=ke+1; k++) {
     }
   }
 }
-
   /******************************************************/
   /* Initialize density, momentum, face-centered fields */
 for  (k=ks; k<=ke; k++) {
@@ -103,6 +107,10 @@ for  (k=ks; k<=ke; k++) {
       pGrid->U[k][j][i].M1 = d0*v0*sin(x1)*cos(x2)*cos(x3);
       pGrid->U[k][j][i].M2 = -d0*v0*cos(x1)*sin(x2)*cos(x3);
       pGrid->U[k][j][i].M3 = 0.0;
+      pGrid->U[k][j][i].E = 0.5*(SQR(pGrid->U[k][j][i].B1c) + SQR(pGrid->U[k][j][i].B2c)
+              + SQR(pGrid->U[k][j][i].B3c)) + 0.5*(SQR(pGrid->U[k][j][i].M1) + SQR(pGrid->U[k][j][i].M2)
+              + SQR(pGrid->U[k][j][i].M3))/pGrid->U[k][j][i].d;
+      //pGrid->U[k][j][i].E = (1.0/gamma - ((v0*v0)/16.0)*(cos(2*x1/L)+cos(2*x2/L))*(cos(2*x3/L)+2))/(gamma-1.0) ;
 
       /*Curl of A*/
       pGrid->B1i[k][j][i] = (az[k][j+1][i] - az[k][j][i])/pGrid->dx2 - (ay[k+1][j][i] - ay[k][j][i])/pGrid->dx3;
@@ -148,13 +156,13 @@ for (k=ks; k<=ke+1; k++){
     pGrid->U[k][j][i].B2c = 0.5*(pGrid->B2i[k][j][i]+pGrid->B2i[k][j+1][i]);
     pGrid->U[k][j][i].B3c = 0.5*(pGrid->B3i[k][j][i]+pGrid->B3i[k+1][j][i]);
 
-#ifndef ISOTHERMAL   /*? Thing I am least sure about below*/
-    pGrid->U[k][j][i].E = p0/Gamma_1
-        + 0.5*(SQR(pGrid->U[k][j][i].B1c) + SQR(pGrid->U[k][j][i].B2c)
-             + SQR(pGrid->U[k][j][i].B3c))
-        + 0.5*(SQR(pGrid->U[k][j][i].M1) + SQR(pGrid->U[k][j][i].M2)
-              + SQR(pGrid->U[k][j][i].M3))/pGrid->U[k][j][i].d;
-#endif
+//p/Gamma_1
+
+
+
+//#ifndef ISOTHERMAL   /*? Thing I am least sure about below*/
+//#endif
+
   }
  }
 }
@@ -204,9 +212,9 @@ void problem_read_restart(MeshS *pM, FILE *fp)
 
 ConsFun_t get_usr_expr(const char *expr)
 {
-  if(strcmp(expr,"J1")==0) return current1;
-  if(strcmp(expr,"J2")==0) return current2;
-  if(strcmp(expr,"J3")==0) return current3;
+//  if(strcmp(expr,"J1")==0) return current1;
+//  if(strcmp(expr,"J2")==0) return current2;
+//  if(strcmp(expr,"J3")==0) return current3;
   return NULL;
 }
 
