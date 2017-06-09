@@ -30,7 +30,7 @@ void problem(DomainS *pDomain)
   int i,j,k,is,ie,js,je,ks,ke,nx1,nx2,nx3;
   Real L, p, p0, b0,v0,d0, ***ax, ***ay, ***az, x1,x2,x3,gamma;
 
-  /*  is js ks seems like start for the 3 directions i,j,k   */
+  /*  grid setting  */
   is = pGrid->is;
   ie = pGrid->ie;
 
@@ -40,12 +40,12 @@ void problem(DomainS *pDomain)
   ks = pGrid->ks;
   ke = pGrid->ke;
 
-  /*Not exactly sure what this is for but it was in the orszag-tang.c file*/
+  /*Based on orszag-tang.c file*/
   nx1 = (ie-is)+1 + 2*nghost;
   nx2 = (je-js)+1 + 2*nghost;
   nx3 = (ke-ks)+1 + 2*nghost;
 
-
+    //This is a way of declaring certain variables.
     //When I put this in the "illegal instruction 4" error went away.
     if ((ax = (Real***)calloc_3d_array(nx3,nx2, nx1, sizeof(Real))) == NULL) {
         ath_error("[taylor-green]: Error allocating memory for vector pot\n");
@@ -63,14 +63,14 @@ void problem(DomainS *pDomain)
        ath_error("[taylor-green]: This problem can only be run in 3D\n");
      }
 
+  /* Variables Set in Input file */
 
-  /* Temporarily set B0 and v0 */
-  b0 = 1.0;
-  v0 = 0.0001;       // 1.0;    //must be smaller than mach speed.
-  d0 =1000.0;         // d0 ?
-  p0 = 1.0;
-  gamma = 1.666666667;
-  L=1.0;
+  b0              = par_getd("problem","b0");
+  v0              = par_getd("problem","v0");
+  d0              = par_getd("problem","d0");
+  p0              = par_getd("problem","p0");
+  L               = par_getd("problem","L");
+
  /*internal energy density -> pressure in this case */
 /*********Functional Form of Pressure*************************/
 //p= p0+(d0*(v0*v0)/16.0)*(cos(2*x1/L)+cos(2*x2/L))*(cos(2*x3/L)+2);
@@ -107,9 +107,9 @@ for  (k=ks; k<=ke; k++) {
       pGrid->U[k][j][i].M1 = d0*v0*sin(x1)*cos(x2)*cos(x3);
       pGrid->U[k][j][i].M2 = -d0*v0*cos(x1)*sin(x2)*cos(x3);
       pGrid->U[k][j][i].M3 = 0.0;
-      pGrid->U[k][j][i].E = 0.5*(SQR(pGrid->U[k][j][i].B1c) + SQR(pGrid->U[k][j][i].B2c)
-              + SQR(pGrid->U[k][j][i].B3c)) + 0.5*(SQR(pGrid->U[k][j][i].M1) + SQR(pGrid->U[k][j][i].M2)
-              + SQR(pGrid->U[k][j][i].M3))/pGrid->U[k][j][i].d;
+      //pGrid->U[k][j][i].E = 0.5*(SQR(pGrid->U[k][j][i].B1c) + SQR(pGrid->U[k][j][i].B2c)
+              //+ SQR(pGrid->U[k][j][i].B3c)) + 0.5*(SQR(pGrid->U[k][j][i].M1) + SQR(pGrid->U[k][j][i].M2)
+              //+ SQR(pGrid->U[k][j][i].M3))/pGrid->U[k][j][i].d;
       //pGrid->U[k][j][i].E = (1.0/gamma - ((v0*v0)/16.0)*(cos(2*x1/L)+cos(2*x2/L))*(cos(2*x3/L)+2))/(gamma-1.0) ;
 
       /*Curl of A*/
@@ -158,18 +158,17 @@ for (k=ks; k<=ke+1; k++){
 
 //p/Gamma_1
 
-
-
-//#ifndef ISOTHERMAL   /*? Thing I am least sure about below*/
-//#endif
+#ifndef ISOTHERMAL
+    pGrid->U[k][j][i].E = p0/Gamma_1
+        + 0.5*(SQR(pGrid->U[k][j][i].B1c) + SQR(pGrid->U[k][j][i].B2c)
+             + SQR(pGrid->U[k][j][i].B3c))
+        + 0.5*(SQR(pGrid->U[k][j][i].M1) + SQR(pGrid->U[k][j][i].M2)
+              + SQR(pGrid->U[k][j][i].M3))/pGrid->U[k][j][i].d;
+#endif
 
   }
  }
 }
-
-
-
-
   return;
 }
 
@@ -183,7 +182,8 @@ for (k=ks; k<=ke+1; k++){
  * Userwork_in_loop        - problem specific work IN     main loop
  * Userwork_after_loop     - problem specific work AFTER  main loop
  *----------------------------------------------------------------------------*/
- static Real current1(const GridS *pG, const int i, const int j, const int k)
+/*
+static Real current1(const GridS *pG, const int i, const int j, const int k)
  {  return ((pG->B3i[k][j][i]-pG->B3i[k][j-1][i])/pG->dx2 -
             (pG->B2i[k][j][i]-pG->B2i[k-1][j][i])/pG->dx3);
  }
@@ -199,10 +199,11 @@ for (k=ks; k<=ke+1; k++){
  {  return ((pG->B2i[k][j][i]-pG->B2i[k][j][i-1])/pG->dx1 -
             (pG->B1i[k][j][i]-pG->B1i[k][j-1][i])/pG->dx2);
  }
-
+*/
 void problem_write_restart(MeshS *pM, FILE *fp)
 {
   return;
+
 }
 
 void problem_read_restart(MeshS *pM, FILE *fp)
