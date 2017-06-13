@@ -28,7 +28,7 @@ void problem(DomainS *pDomain)
 {
   GridS *pGrid = pDomain->Grid;
   int i,j,k,is,ie,js,je,ks,ke,nx1,nx2,nx3;
-  Real L, p, p0, b0,v0,d0, ***ax, ***ay, ***az, x1,x2,x3,gamma;
+  Real p, p0, b0,v0,d0, ***ax, ***ay, ***az, x1,x2,x3,gamma;
 
   /*  grid setting  */
   is = pGrid->is;
@@ -69,7 +69,6 @@ void problem(DomainS *pDomain)
   v0              = par_getd("problem","v0");
   d0              = par_getd("problem","d0");
   p0              = par_getd("problem","p0");
-  L               = par_getd("problem","L");
 
  /*internal energy density -> pressure in this case */
 /*********Functional Form of Pressure*************************/
