@@ -1,7 +1,12 @@
 #!/bin/bash
 
+cd bin
+rm -r *.vtk
+cd ..
 make clean
-./configure --with-problem=taylor-green --with-order=3
+#--with-eos=isothermal
+#--enable-smr
+./configure --with-problem=taylor-green --with-eos=isothermal  --with-order=3
 make all
 
 cd bin
