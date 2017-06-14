@@ -20,7 +20,7 @@
  *  (user modified via configure) */
 
 /* Version identifier when configure was last run */
-#define CONFIGURE_DATE "Sun Jan 15 21:06:29 EST 2017"
+#define CONFIGURE_DATE "Wed Jun 14 00:55:28 EDT 2017"
 
 /* Problem generator with which Athena is compiled */
 #define A_PROBLEM "taylor-green"
@@ -29,8 +29,8 @@
 #define MHD
 
 /* ADIABATIC or ISOTHERMAL or ... */
-#define ADIABATIC
-#define EOS_STR "ADIABATIC"
+#define ISOTHERMAL
+#define EOS_STR "ISOTHERMAL"
 
 #if defined(ISOTHERMAL) /* || defined PIECEWISE_POLYTROPE ... */
 #define BAROTROPIC        /* P = P(rho) */
@@ -84,7 +84,7 @@
 #define NO_WRITE_GHOST_CELLS
 
 /* MPI parallelism: MPI_PARALLEL or NO_MPI_PARALLEL */
-#define NO_MPI_PARALLEL
+#define MPI_PARALLEL
 
 /* H-correction: H_CORRECTION or NO_H_CORRECTION */
 #define NO_H_CORRECTION

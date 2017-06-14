@@ -34,8 +34,8 @@ ifeq (@FFT_MODE@,FFT_ENABLED)
 endif
 
 ifeq (@MPI_MODE@,MPI_PARALLEL)
-  CC = mpicc 
-  LDR = mpicc 
+  CC = mpicc
+  LDR = mpicc
 endif
 
 #-------------------  compiler/library definitions  ----------------------------
@@ -89,6 +89,13 @@ ifeq ($(MACHINE),zenith)
   FFTWLIB = -L/usr/local/fftw3 -lfftw3
   FFTWINC = -I/usr/local/fftw3
 else
+ifeq ($(MACHINE),hpcc)
+  CC  = /opt/software/OpenMPI/1.4.4--GCC-4.4.5/bin/mpicc
+  LDR = /opt/software/OpenMPI/1.4.4--GCC-4.4.5/bin/mpicc
+  OPT = -O3 -g
+  MPIINC = -I/opt/software/OpenMPI/1.4.4--GCC-4.4.5/include
+  MPILIB = -L/opt/software/OpenMPI/1.4.4--GCC-4.4.5/lib -lmpi
+else
 ifeq ($(MACHINE),macosx)
   CC = gcc
   LDR = gcc
@@ -97,6 +104,7 @@ ifeq ($(MACHINE),macosx)
   FFTWINC = -I/opt/local/include
 else
   abort Unsupported MACHINE=$(MACHINE)
+endif
 endif
 endif
 endif

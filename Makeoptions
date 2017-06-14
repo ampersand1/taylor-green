@@ -15,8 +15,8 @@ MACHINE = default
 
 #-------------------  default definitions  -------------------------------------
 
-CC  = gcc
-LDR = gcc
+CC  = /usr/bin/gcc
+LDR = /usr/bin/gcc
 OPT = -O3
 CUSTLIBS =
 MPIINC =
@@ -33,9 +33,9 @@ ifeq (NO_FFT,FFT_ENABLED)
   FFTWINC = -I/usr/include
 endif
 
-ifeq (NO_MPI_PARALLEL,MPI_PARALLEL)
-  CC = mpicc 
-  LDR = mpicc 
+ifeq (MPI_PARALLEL,MPI_PARALLEL)
+  CC = mpicc
+  LDR = mpicc
 endif
 
 #-------------------  compiler/library definitions  ----------------------------
@@ -89,6 +89,13 @@ ifeq ($(MACHINE),zenith)
   FFTWLIB = -L/usr/local/fftw3 -lfftw3
   FFTWINC = -I/usr/local/fftw3
 else
+ifeq ($(MACHINE),hpcc)
+  CC  = /opt/software/OpenMPI/1.4.4--GCC-4.4.5/bin/mpicc
+  LDR = /opt/software/OpenMPI/1.4.4--GCC-4.4.5/bin/mpicc
+  OPT = -O3 -g
+  MPIINC = -I/opt/software/OpenMPI/1.4.4--GCC-4.4.5/include
+  MPILIB = -L/opt/software/OpenMPI/1.4.4--GCC-4.4.5/lib -lmpi
+else
 ifeq ($(MACHINE),macosx)
   CC = gcc
   LDR = gcc
@@ -104,8 +111,9 @@ endif
 endif
 endif
 endif
+endif
 
-ifeq (NO_MPI_PARALLEL,NO_MPI_PARALLEL)
+ifeq (MPI_PARALLEL,NO_MPI_PARALLEL)
   MPIINC = 
   MPILIB = 
 endif
