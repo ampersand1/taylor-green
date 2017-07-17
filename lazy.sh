@@ -6,7 +6,8 @@ cd ..
 make clean
 #--with-eos=isothermal
 #--enable-smr
-./configure --with-problem=taylor-green --with-eos=isothermal  --with-order=3
+#--with-eos=isothermal
+./configure --with-problem=taylor-green --with-eos=isothermal --with-order=3
 make all
 
 cd bin
