@@ -130,7 +130,6 @@ for  (k=ks; k<=ke; k++) {
   }
  }
 }
-
 for (k=ks; k<=ke; k++){
  for (j=js; j<=je+1; j++) {
   for (i=is; i<=ie; i++)   {
@@ -181,28 +180,26 @@ for (k=ks; k<=ke+1; k++){
  * Userwork_in_loop        - problem specific work IN     main loop
  * Userwork_after_loop     - problem specific work AFTER  main loop
  *----------------------------------------------------------------------------*/
-/*
-static Real current1(const GridS *pG, const int i, const int j, const int k)
- {  return ((pG->B3i[k][j][i]-pG->B3i[k][j-1][i])/pG->dx2 -
-            (pG->B2i[k][j][i]-pG->B2i[k-1][j][i])/pG->dx3);
+
+//current density
+static Real current_x(const GridS *pG, const int i, const int j, const int k)
+ {  return ((pG->B3i[k][j+1][i]-pG->B3i[k][j][i])/pG->dx2 -
+            (pG->B2i[k+1][j][i]-pG->B2i[k][j][i])/pG->dx3);
  }
 
-
- static Real current2(const GridS *pG, const int i, const int j, const int k)
- {  return ((pG->B1i[k][j][i]-pG->B1i[k][j-1][i])/pG->dx2 -
-            (pG->B2i[k][j][i]-pG->B2i[k][j][i-1])/pG->dx1);
+ static Real current_y(const GridS *pG, const int i, const int j, const int k)
+ {  return ((pG->B1i[k+1][j][i]-pG->B1i[k][j][i])/pG->dx3 -
+            (pG->B3i[k][j][i+1]-pG->B3i[k][j][i])/pG->dx1);
  }
 
-
- static Real current3(const GridS *pG, const int i, const int j, const int k)
- {  return ((pG->B2i[k][j][i]-pG->B2i[k][j][i-1])/pG->dx1 -
-            (pG->B1i[k][j][i]-pG->B1i[k][j-1][i])/pG->dx2);
+ static Real current_z(const GridS *pG, const int i, const int j, const int k)
+ {  return ((pG->B2i[k][j][i+1]-pG->B2i[k][j][i])/pG->dx1 -
+            (pG->B1i[k][j+1][i]-pG->B1i[k][j][i])/pG->dx2);
  }
-*/
+
 void problem_write_restart(MeshS *pM, FILE *fp)
 {
   return;
-
 }
 
 void problem_read_restart(MeshS *pM, FILE *fp)
@@ -212,9 +209,9 @@ void problem_read_restart(MeshS *pM, FILE *fp)
 
 ConsFun_t get_usr_expr(const char *expr)
 {
-//  if(strcmp(expr,"J1")==0) return current1;
-//  if(strcmp(expr,"J2")==0) return current2;
-//  if(strcmp(expr,"J3")==0) return current3;
+  if(strcmp(expr,"current_x")==0) return current_x;
+  if(strcmp(expr,"current_y")==0) return current_y;
+  if(strcmp(expr,"current_z")==0) return current_z;
   return NULL;
 }
 
