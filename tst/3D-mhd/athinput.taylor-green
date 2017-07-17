@@ -66,7 +66,7 @@ iso_csound      = 1.0             # isothemal sound speed
 b0              = 0.35
 v0              = 1.0             # must create small mach speed.
 d0              = 0.35
-p0              = 0.35
+p0              = 0.0000001
 
 ###################################################################################
 #<domain2>
