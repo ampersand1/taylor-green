@@ -18,7 +18,7 @@
 
 
 #ifndef MHD
-#error : The problem generator orszag_tang.c only works for mhd.
+#error : The problem generator taylor-green.c only works for mhd.
 #endif /* MHD */
 
 /*----------------------------------------------------------------------------*/

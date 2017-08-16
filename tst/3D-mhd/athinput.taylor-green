@@ -11,32 +11,32 @@ num_domains  = 1             # number of Domains in Mesh
 
 <output1>
 out_fmt = vtk
-dt = 0.1
+dt = 0.01
 
 <output2>
 out_fmt        = vtk
 out            = current_x
 id             = current_x
 usr_expr_flag  = 1
-dt = 0.1
+dt = 0.01
 
 <output3>
 out_fmt        = vtk
 out            = current_y
 id             = current_y
 usr_expr_flag   = 1
-dt = 0.1
+dt = 0.01
 
 <output4>
 out_fmt        = vtk
 out            = current_z
 id             = current_z
 usr_expr_flag = 1
-dt = 0.1
+dt = 0.01
 
 <time>
 cour_no         = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
-nlim            = 500       # cycle limit
+nlim            = 10000       # cycle limit
 tlim            = 1000      # time limit
 
 <domain1>
@@ -61,12 +61,12 @@ bc_ox3          = 4         # boundary condition flag for outer-K (X3)
 
 
 <problem>
-iso_csound      = 1.0             # isothemal sound speed
+iso_csound      = 100.0             # isothemal sound speed
 #gamma           = 1.666666667     # gamma = C_p/C_v
-b0              = 0.35
-v0              = 1.0             # must create small mach speed.
-d0              = 0.35
-p0              = 1000.0
+b0              = 0.57735
+v0              = 1.0             #used to be 1.             # must create small mach speed.
+d0              = 1.0
+p0              = 1.0
 
 ###################################################################################
 #<domain2>
